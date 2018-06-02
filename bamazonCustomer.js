@@ -23,6 +23,7 @@ function initialDisplay () {
         for (var i = 0; i < res.length; i++){
             console.log(res[i].item_id + "|" + res[i].product_name + "|" + res[i].department_name + "|" + res[i].price.toFixed(2) + "|" + res[i].stock_quantity);
         }
+        console.log("Enter product ID '11' to restock");
         console.log("===============================================================");
         promptUser();
     });
@@ -41,11 +42,13 @@ function promptUser(){
                 name: "unitCount"
             }
         ]).then(function(response){
-            if(response.unitCount !== undefined || response.productID !== undefined){
-            checkItem(response);
+            if(response.unitCount !== undefined && response.productID <= 10){
+                checkItem(response);
+            }else if (response.productID === "11") {
+                restockInquire();
             }else {
-            console.log("\n That is not a valid request. \n");
-            promptUser();
+                console.log("\n That is not a valid request. \n");
+                promptUser();
             }
         });
 }
@@ -54,7 +57,7 @@ function checkItem(response){
     connection.query("SELECT * FROM products WHERE ?", 
     {
         item_id: response.productID,
-    }, function(err,res){
+    }, function(err, res){
         if(err) throw err;
         if(response.productID >= 1 && response.productID <=10){
             checkStock(response);
@@ -63,13 +66,15 @@ function checkItem(response){
             promptUser();
         }
     });
-}
+};
 
 function checkStock(response){
     connection.query("SELECT * FROM products WHERE ?", 
     {
         item_id: response.productID,
-    }, function(err,res){
+    }, 
+    function(err, res){
+        if(err) throw err;
         if(res[0].stock_quantity >= response.unitCount){
             checkOut(response);
         }else{
@@ -77,14 +82,16 @@ function checkStock(response){
             promptUser();
         }
     });
-}
+};
 
 function checkOut(response){
     connection.query("SELECT * FROM products WHERE ?", 
     {
         item_id: response.productID,
-    },function(err,res){
-            // console.log(res[0]);
+    },
+    function(err, res){
+        if(err) throw err;
+            console.log(res);
             // console.log(res[1]);
             console.log("\n You have purchased... \n");
             console.log(response.unitCount + " order(s) of the item '" + res[0].product_name + "'. \n");
@@ -104,13 +111,55 @@ function updateStock(res, response){
                 product_name: res[0].product_name
             }
         ],
-        function(err,res){
+        function(err, res){
             if(err) throw err;
             console.log("Quantity Updated!");
             reprompt();
         });   
 
 }
+
+function restockInquire(){
+    inquirer.prompt([
+        {
+            type: "input",
+            message: "Which product id number would you like to restock?",
+            name: "product"
+        },
+        {
+            type: "input",
+            message: "How many items would you like to add?",
+            name: "number"
+        }
+    ]).then (function(response){
+        connection.query("SELECT * FROM products WHERE ?", 
+            {
+                item_id: response.product,
+            }, function(err,res){
+                if (err) throw err;
+                restock(res, response);
+            
+        });        
+    });
+};
+
+function restock(res, response){
+    connection.query("UPDATE products SET ? WHERE ?",   
+    [
+        {
+            stock_quantity: (res[0].stock_quantity + parseInt(response.number))
+        }, 
+        {
+            product_name: res[0].product_name
+        }
+    ],
+        function(err, res){
+            if(err) throw err;
+            console.log("Quanity Added!");
+            initialDisplay();
+        });
+};
+
 
 function reprompt(){
     inquirer.prompt ([
@@ -126,6 +175,5 @@ function reprompt(){
         }else {
             console.log("Thank you come again!");
         }
-    });
+    })
 }
-

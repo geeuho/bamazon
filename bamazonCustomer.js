@@ -29,8 +29,7 @@ function initialDisplay () {
 }
 
 function promptUser(){
-    inquirer
-        .prompt ([
+    inquirer.prompt ([
             {
                 type: "input",
                 message: "What is the ID of the product you want to buy?",
@@ -85,8 +84,12 @@ function checkOut(response){
     {
         item_id: response.productID,
     },function(err,res){
+            // console.log(res[0]);
+            // console.log(res[1]);
             console.log("\n You have purchased... \n");
-            console.log(response.unitCount + " order(s) of the item '" + res[0].product_name + "'.");
+            console.log(response.unitCount + " order(s) of the item '" + res[0].product_name + "'. \n");
+            console.log("That will cost you " + res[0].price * response.unitCount + " dollars. \n")
+            console.log("Thank you for your purchase! \n");
             updateStock(res, response);
     });
 }
@@ -104,7 +107,25 @@ function updateStock(res, response){
         function(err,res){
             if(err) throw err;
             console.log("Quantity Updated!");
-            console.log("Thank you come again!");
+            reprompt();
         });   
+
+}
+
+function reprompt(){
+    inquirer.prompt ([
+        {
+            type: "confirm",
+            message: "Would you like to buy anything else?",
+            name: "reprompt"
+        }
+    ]).then (function(response){
+        // console.log(response.reprompt );
+        if (response.reprompt === true){
+            initialDisplay();
+        }else {
+            console.log("Thank you come again!");
+        }
+    });
 }
 

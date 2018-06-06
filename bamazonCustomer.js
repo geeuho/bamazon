@@ -62,7 +62,7 @@ function checkItem(response){
         if(response.productID >= 1 && response.productID <=10){
             checkStock(response);
         } else{
-            console.log("You have requested an invalid product ID");
+            console.log("You have requested an invalid ID");
             promptUser();
         }
     });
